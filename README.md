@@ -22,7 +22,7 @@ Reddit: https://www.reddit.com/r/unrealengine/comments/bo7yko/ue4minimal_my_unre
 
 Unreal Engine Forums: https://forums.unrealengine.com/community/work-in-progress/1618822-ue4minimal-my-unreal-engine-minimal-theme
 
-Alessa <3
+**Alessa <3**
 
 ###### How to install:
 
