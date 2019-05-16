@@ -1,11 +1,12 @@
 
-![alt text](https://raw.githubusercontent.com/Sythenz/UE4Minimal/master/UE4Minimal01_01.jpg)
-
 # UE4Minimal
 
 UE4 Minimal is an attempt at a dark theme for Unreal Engine 4. Currently compatible with UE4.20 and up. This 
 theme works by replacing images in UE4's Engine/Content folder - My hope is to go full minimal with this theme and 
 address the iconography of UE4.
+
+![UE4 Minimal Screenshot 01](https://raw.githubusercontent.com/Sythenz/UE4Minimal/master/UE4Minimal01_01.jpg)
+![UE4 Minimal Screenshot 02](https://raw.githubusercontent.com/Sythenz/UE4Minimal/master/UE4Minimal01_02.jpg)
 
 I've also included PSDs of any file that I've touched - Layer 0 in these PSDs is the original
 image, should you wish to modify or make changes yourself.
