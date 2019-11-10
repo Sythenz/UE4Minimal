@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "UE4Minimal",
+	"Description": "A minimal theme for UE4. This plugin updates UE4 Minimal, and adds extra features such as padding and colors.",
+	"Category": "Other",
+	"CreatedBy": "Alessa Baker",
+	"CreatedByURL": "https://twitter.com/codekittah",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "UE4Minimal",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
