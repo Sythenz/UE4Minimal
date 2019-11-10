@@ -38,3 +38,8 @@ Engine/Content folder. You will be asked to override a few thousand files, hit y
 Do not copy and replace the "Editor/Slate/Graph" folder.
 
 5. Once all is done, open the editor and enjoy your new minimal theme.
+
+###### A note about branches:
+
+The ue4plugin branch is heavily work in progress and will add some nice features in the future,
+and may not compile at all. Stick with Master if you're just looking for the theme :)
