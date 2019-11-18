@@ -1,0 +1,12 @@
+{
+	"ImageOverride": [
+	  { "Editor/Slate/Docking/AppTab_Foreground": [
+			"FDockTabStyle:Docking.MajorTab/ForegroundBrush"
+		]
+	  }
+	],
+	"GlobalSettings": {
+		"DefaultFont": "",
+		"DownloadLink": ""
+	}
+}
