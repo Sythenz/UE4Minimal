@@ -5,16 +5,154 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Slate/SlateGameResources.h"
 #include "Interfaces/IPluginManager.h"
+#include "Serialization/JsonSerializer.h"
+#include "Misc/FileHelper.h"
+#include <iostream>
 
 TSharedPtr< FSlateStyleSet > FUE4MinimalStyle::StyleInstance = NULL;
 
+
+#define IMAGE_BRUSH( RelativePath, ... ) FSlateImageBrush(*(themePath + RelativePath + ".png"), __VA_ARGS__)
+#define BOX_BRUSH( RelativePath, ... ) FSlateBoxBrush(*(themePath + RelativePath + ".png"), __VA_ARGS__)
+#define BORDER_BRUSH( RelativePath, ... ) FSlateBorderBrush(*(themePath + RelativePath + ".png"), __VA_ARGS__)
+#define DEFAULT_FONT( RelativePath, ... )FCoreStyle::GetDefaultFontStyle(__VA_ARGS__)
+
 void FUE4MinimalStyle::Initialize()
 {
+    FString themePath = FPaths::ProjectPluginsDir() + "UE4Minimal/Theme/";
 	if (!StyleInstance.IsValid())
 	{
 		StyleInstance = Create();
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
+        //FSlateStyleSet* EditorStyles = (FSlateStyleSet*)&FEditorStyle::Get();
+        //static FSlateBrush PurpleBrush = *FEditorStyle::GetBrush("Graph.Panel.SolidBackground");
+        //FLinearColor purple(1.0f, 0.0f, 1.0f);
+        //PurpleBrush.TintColor = FSlateColor();
+        //const ISlateStyle& coreStyles = FCoreStyle::Get();
+        //*(FSlateBrush*)coreStyles.GetBrush("ToolBar.Background") = PurpleBrush;
+        
+
+        {
+            FString JsonString;
+            const FString JsonFilePath(FPaths::ProjectPluginsDir() + "UE4Minimal/UE4MinimalOverrides.json");
+            FFileHelper::LoadFileToString(JsonString,*JsonFilePath);
+            TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+            TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+            std::cout << "jsonPath: " << TCHAR_TO_UTF8(*JsonFilePath) << "\n";
+
+            if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid()) {
+                for(TSharedPtr<FJsonValue> overrideFile : JsonObject->GetArrayField("ImageOverride")) {
+                    const TMap<FString, TSharedPtr<FJsonValue>>::ElementType& overrideField = *overrideFile->AsObject()->Values.begin();
+                    std::cout << "overrideField: " << TCHAR_TO_UTF8(*overrideField.Key) << "\n";
+                    TSharedPtr<FJsonValue> slateCathegories(overrideField.Value);
+                    for (TSharedPtr<FJsonValue> sCath : slateCathegories->AsArray()) {
+                        FString type = "";
+                        FString member = "";
+                        FString slatePath = "";
+                        {
+                            FString full(sCath->AsString());
+                            if (full.Split(":", &type, &slatePath)) {
+                                std::cout << "type: " << TCHAR_TO_UTF8(*type) << "\n";
+                            }
+                        }
+                        {
+                            FString full(sCath->AsString());
+                            if (full.Split("/", &slatePath, &member)) {
+                                std::cout << "member: " << TCHAR_TO_UTF8(*member) << "\n";
+                            }
+                        }
+                        if (member.IsEmpty() && type.IsEmpty()) {
+                            slatePath = sCath->AsString();
+                        } else {
+                            slatePath.Split(":", &type, &slatePath);
+                        }
+                        std::cout << "slatePath: " << TCHAR_TO_UTF8(*slatePath) << "\n";
+                        FUE4MinimalStyle::overrideCoreWidgetBrush(themePath, type, slatePath, member, overrideField.Key);
+                        std::cout << "FULL:" << TCHAR_TO_UTF8(*sCath->AsString()) << " type: " << TCHAR_TO_UTF8(*type) << " member: " << TCHAR_TO_UTF8(*member) << " slatePath: " << TCHAR_TO_UTF8(*slatePath) << "\n\n";
+                    }
+                }
+            } else {
+                std::cout << "json isn't valid\n";
+            }
+        }
 	}
+}
+
+template <typename InObj>
+void overrideBrushProperty(InObj& obj, FString themePath, FString type, FString slateCathegory, FString member, FString newPath) {
+    std::cout << "Struct cpp name: " << TCHAR_TO_UTF8(*obj.StaticStruct()->GetStructCPPName()) << "\n";
+    for (TFieldIterator<UProperty> propIt(obj.StaticStruct()); propIt; ++propIt) {
+        UProperty* Property = *propIt;
+        if (Property->GetNameCPP() == member) {
+            FSlateBrush* originalBrush = Property->ContainerPtrToValuePtr<FSlateBrush>((void*)&obj, 0);
+            *originalBrush = BOX_BRUSH(newPath, originalBrush->GetMargin());
+            originalBrush->GetImageSize();
+            break;
+        }
+    }
+}
+
+// if there is a way to do this using UE4 introspection, please replace this ugly code
+// all classes comming from CoreStyle.h
+void overrideCoreWidget(FString themePath, FString type, FString slateCathegory, FString member, FString newPath) {
+    const ISlateStyle& coreStyles = FCoreStyle::Get();
+    if (type == "FCheckBoxStyle") {
+        return overrideBrushProperty((FCheckBoxStyle&)coreStyles.GetWidgetStyle<FCheckBoxStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FTextBlockStyle") {
+        return overrideBrushProperty((FTextBlockStyle&)coreStyles.GetWidgetStyle<FTextBlockStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FButtonStyle") {
+        return overrideBrushProperty((FButtonStyle&)coreStyles.GetWidgetStyle<FButtonStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FComboButtonStyle") {
+        return overrideBrushProperty((FComboButtonStyle&)coreStyles.GetWidgetStyle<FComboButtonStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FComboBoxStyle") {
+        return overrideBrushProperty((FComboBoxStyle&)coreStyles.GetWidgetStyle<FComboBoxStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FHyperlinkStyle") {
+        return overrideBrushProperty((FHyperlinkStyle&)coreStyles.GetWidgetStyle<FHyperlinkStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FEditableTextStyle") {
+        return overrideBrushProperty((FEditableTextStyle&)coreStyles.GetWidgetStyle<FEditableTextStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FScrollBarStyle") {
+        return overrideBrushProperty((FScrollBarStyle&)coreStyles.GetWidgetStyle<FScrollBarStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FEditableTextBoxStyle") {
+        return overrideBrushProperty((FEditableTextBoxStyle&)coreStyles.GetWidgetStyle<FEditableTextBoxStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FInlineEditableTextBlockStyle") {
+        return overrideBrushProperty((FInlineEditableTextBlockStyle&)coreStyles.GetWidgetStyle<FInlineEditableTextBlockStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FProgressBarStyle") {
+        return overrideBrushProperty((FProgressBarStyle&)coreStyles.GetWidgetStyle<FProgressBarStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FExpandableAreaStyle") {
+        return overrideBrushProperty((FExpandableAreaStyle&)coreStyles.GetWidgetStyle<FExpandableAreaStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FSearchBoxStyle") {
+        return overrideBrushProperty((FSearchBoxStyle&)coreStyles.GetWidgetStyle<FSearchBoxStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FSliderStyle") {
+        return overrideBrushProperty((FSliderStyle&)coreStyles.GetWidgetStyle<FSliderStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FVolumeControlStyle") {
+        return overrideBrushProperty((FVolumeControlStyle&)coreStyles.GetWidgetStyle<FVolumeControlStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FInlineTextImageStyle") {
+        return overrideBrushProperty((FInlineTextImageStyle&)coreStyles.GetWidgetStyle<FInlineTextImageStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FSpinBoxStyle") {
+        return overrideBrushProperty((FSpinBoxStyle&)coreStyles.GetWidgetStyle<FSpinBoxStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FSplitterStyle") {
+        return overrideBrushProperty((FSplitterStyle&)coreStyles.GetWidgetStyle<FSplitterStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FTableRowStyle") {
+        return overrideBrushProperty((FTableRowStyle&)coreStyles.GetWidgetStyle<FTableRowStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FTableColumnHeaderStyle") {
+        return overrideBrushProperty((FTableColumnHeaderStyle&)coreStyles.GetWidgetStyle<FTableColumnHeaderStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FHeaderRowStyle") {
+        return overrideBrushProperty((FHeaderRowStyle&)coreStyles.GetWidgetStyle<FHeaderRowStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FDockTabStyle") {
+        return overrideBrushProperty((FDockTabStyle&)coreStyles.GetWidgetStyle<FDockTabStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FScrollBoxStyle") {
+        return overrideBrushProperty((FScrollBoxStyle&)coreStyles.GetWidgetStyle<FScrollBoxStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FScrollBorderStyle") {
+        return overrideBrushProperty((FScrollBorderStyle&)coreStyles.GetWidgetStyle<FScrollBorderStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else if (type == "FWindowStyle") {
+        return overrideBrushProperty((FWindowStyle&)coreStyles.GetWidgetStyle<FWindowStyle>(*slateCathegory), themePath, type, slateCathegory, member, newPath);
+    } else {
+        // insert some UE4_LOG warning here
+    }
+}
+
+void FUE4MinimalStyle::overrideCoreWidgetBrush(FString themePath, FString type, FString slateCathegory, FString member, FString newPath) {
+    overrideCoreWidget(themePath, type, slateCathegory, member, newPath);
 }
 
 void FUE4MinimalStyle::Shutdown()
@@ -30,31 +168,15 @@ FName FUE4MinimalStyle::GetStyleSetName()
 	return StyleSetName;
 }
 
-#define IMAGE_BRUSH( RelativePath, ... ) FSlateImageBrush( Style->RootToContentDir( RelativePath, TEXT(".png") ), __VA_ARGS__ )
-#define BOX_BRUSH( RelativePath, ... ) FSlateBoxBrush( Style->RootToContentDir( RelativePath, TEXT(".png") ), __VA_ARGS__ )
-#define BORDER_BRUSH( RelativePath, ... ) FSlateBorderBrush( Style->RootToContentDir( RelativePath, TEXT(".png") ), __VA_ARGS__ )
-#define TTF_FONT( RelativePath, ... ) FSlateFontInfo( Style->RootToContentDir( RelativePath, TEXT(".ttf") ), __VA_ARGS__ )
-#define OTF_FONT( RelativePath, ... ) FSlateFontInfo( Style->RootToContentDir( RelativePath, TEXT(".otf") ), __VA_ARGS__ )
-
-const FVector2D Icon16x16(16.0f, 16.0f);
-const FVector2D Icon20x20(20.0f, 20.0f);
-const FVector2D Icon40x40(40.0f, 40.0f);
-
 TSharedRef< FSlateStyleSet > FUE4MinimalStyle::Create()
 {
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("UE4MinimalStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("UE4Minimal")->GetBaseDir() / TEXT("Resources"));
 
-	Style->Set("UE4Minimal.OpenPluginWindow", new IMAGE_BRUSH(TEXT("ButtonIcon_40x"), Icon40x40));
+	Style->Set("UE4Minimal.OpenPluginWindow", new FSlateImageBrush(Style->RootToContentDir(TEXT("ButtonIcon_40x"), TEXT(".png")), FVector2D(40.0f, 40.0f)));
 
 	return Style;
 }
-
-#undef IMAGE_BRUSH
-#undef BOX_BRUSH
-#undef BORDER_BRUSH
-#undef TTF_FONT
-#undef OTF_FONT
 
 void FUE4MinimalStyle::ReloadTextures()
 {

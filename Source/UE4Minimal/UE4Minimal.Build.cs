@@ -26,6 +26,8 @@ public class UE4Minimal : ModuleRules
 			new string[]
 			{
 				"Core",
+                "Json",
+                "JsonUtilities"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -42,6 +44,7 @@ public class UE4Minimal : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "EditorStyle"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

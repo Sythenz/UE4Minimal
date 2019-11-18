@@ -9,7 +9,6 @@
 class FUE4MinimalStyle
 {
 public:
-
 	static void Initialize();
 
 	static void Shutdown();
@@ -17,11 +16,11 @@ public:
 	/** reloads textures used by slate renderer */
 	static void ReloadTextures();
 
-	/** @return The Slate style set for the Shooter game */
 	static const ISlateStyle& Get();
 
 	static FName GetStyleSetName();
 
+    static void overrideCoreWidgetBrush(FString ThemePath, FString Type, FString slateCathegory, FString member, FString newPath);
 private:
 
 	static TSharedRef< class FSlateStyleSet > Create();
