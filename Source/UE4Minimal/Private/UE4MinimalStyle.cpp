@@ -7,7 +7,6 @@
 #include "Interfaces/IPluginManager.h"
 #include "Serialization/JsonSerializer.h"
 #include "Misc/FileHelper.h"
-#include <iostream>
 
 TSharedPtr< FSlateStyleSet > FUE4MinimalStyle::StyleInstance = NULL;
 
@@ -35,15 +34,16 @@ void FUE4MinimalStyle::Initialize()
         {
             FString JsonString;
             const FString JsonFilePath(FPaths::ProjectPluginsDir() + "UE4Minimal/UE4MinimalOverrides.json");
-            FFileHelper::LoadFileToString(JsonString,*JsonFilePath);
+            FFileHelper::LoadFileToString(JsonString, *JsonFilePath);
             TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
             TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
-            std::cout << "jsonPath: " << TCHAR_TO_UTF8(*JsonFilePath) << "\n";
+            UE_LOG(LogTemp, Display, TEXT("jsonPath: %s"), *JsonFilePath);
 
             if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid()) {
                 for(TSharedPtr<FJsonValue> overrideFile : JsonObject->GetArrayField("ImageOverride")) {
                     const TMap<FString, TSharedPtr<FJsonValue>>::ElementType& overrideField = *overrideFile->AsObject()->Values.begin();
-                    std::cout << "overrideField: " << TCHAR_TO_UTF8(*overrideField.Key) << "\n";
+                    UE_LOG(LogTemp, Display, TEXT("overrideField: %s"), *overrideField.Key);
+                    
                     TSharedPtr<FJsonValue> slateCathegories(overrideField.Value);
                     for (TSharedPtr<FJsonValue> sCath : slateCathegories->AsArray()) {
                         FString type = "";
@@ -52,13 +52,13 @@ void FUE4MinimalStyle::Initialize()
                         {
                             FString full(sCath->AsString());
                             if (full.Split(":", &type, &slatePath)) {
-                                std::cout << "type: " << TCHAR_TO_UTF8(*type) << "\n";
+                                UE_LOG(LogTemp, Display, TEXT("type: %s"), *type);
                             }
                         }
                         {
                             FString full(sCath->AsString());
                             if (full.Split("/", &slatePath, &member)) {
-                                std::cout << "member: " << TCHAR_TO_UTF8(*member) << "\n";
+                                UE_LOG(LogTemp, Display, TEXT("member: %s"), *member);
                             }
                         }
                         if (member.IsEmpty() && type.IsEmpty()) {
@@ -66,13 +66,13 @@ void FUE4MinimalStyle::Initialize()
                         } else {
                             slatePath.Split(":", &type, &slatePath);
                         }
-                        std::cout << "slatePath: " << TCHAR_TO_UTF8(*slatePath) << "\n";
+                        UE_LOG(LogTemp, Display, TEXT("slatePath: %s"), *slatePath);
                         FUE4MinimalStyle::overrideCoreWidgetBrush(themePath, type, slatePath, member, overrideField.Key);
-                        std::cout << "FULL:" << TCHAR_TO_UTF8(*sCath->AsString()) << " type: " << TCHAR_TO_UTF8(*type) << " member: " << TCHAR_TO_UTF8(*member) << " slatePath: " << TCHAR_TO_UTF8(*slatePath) << "\n\n";
+                        UE_LOG(LogTemp, Display, TEXT("FULL: %s, type: %s, member: %s, slatePath %s"), *sCath->AsString(), *type, *member, *slatePath);
                     }
                 }
             } else {
-                std::cout << "json isn't valid\n";
+                UE_LOG(LogTemp, Error, TEXT("json isn't valid"));
             }
         }
 	}
@@ -80,7 +80,7 @@ void FUE4MinimalStyle::Initialize()
 
 template <typename InObj>
 void overrideBrushProperty(InObj& obj, FString themePath, FString type, FString slateCathegory, FString member, FString newPath) {
-    std::cout << "Struct cpp name: " << TCHAR_TO_UTF8(*obj.StaticStruct()->GetStructCPPName()) << "\n";
+    UE_LOG(LogTemp, Display, TEXT("Struct cpp name: %s"), *obj.StaticStruct()->GetStructCPPName());
     for (TFieldIterator<UProperty> propIt(obj.StaticStruct()); propIt; ++propIt) {
         UProperty* Property = *propIt;
         if (Property->GetNameCPP() == member) {
