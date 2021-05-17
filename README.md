@@ -16,13 +16,13 @@ So please be patient!
 
 For latest updates on progress, follow me here:
 
-Twitter: @Codekittah 
+Twitter: [@codekittah](http://twitter.com/Codekittah) 
 
 Reddit: https://www.reddit.com/r/unrealengine/comments/bo7yko/ue4minimal_my_unreal_engine_minimal_theme/
 
 Unreal Engine Forums: https://forums.unrealengine.com/community/work-in-progress/1618822-ue4minimal-my-unreal-engine-minimal-theme
 
-**Alessa <3**
+**Alessa ❤️**
 
 ###### How to install:
 
